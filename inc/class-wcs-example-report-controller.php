@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WC_REST_Settings_Controller' ) ) {
+if ( ! class_exists( 'WC_REST_Reports_V2_Controller' ) ) {
     return;
 }
 
