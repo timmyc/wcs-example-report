@@ -12,7 +12,7 @@ function wcs_example_report_register_pages() {
 	}
 
 	wc_admin_register_page( array(
-		'title'  => __( 'Labels', 'wcs-example-report' ),
+		'title'  => __( 'Shipping Labels', 'wcs-example-report' ),
 		'parent' => '/analytics',
 		'path'   => '/analytics/wcs-labels',
 	) );
@@ -63,6 +63,7 @@ function wcs_example_report_enqueue_script(){
 	}
 
 	wp_enqueue_script( 'wc-admin-extension' );
+	wp_enqueue_style( 'wcs-example-report', plugins_url( 'js/style.css', __FILE__ ) );
 }
 add_action( 'admin_enqueue_scripts', 'wcs_example_report_enqueue_script' );
 
