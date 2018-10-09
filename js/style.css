@@ -1,0 +1,10 @@
+/** @format */
+.wcs-example-report-placeholder .woocommerce-card__body {
+  padding: 0; }
+
+.wcs-example-report-placeholder .woocommerce-table__table {
+  margin-bottom: 0; }
+  .wcs-example-report-placeholder .woocommerce-table__table tr:last-child {
+    border-bottom-style: none; }
+
+/*# sourceMappingURL=style.css.map*/
