@@ -21,6 +21,7 @@ class ExtensionReport extends Component {
 		super();
 		this.state = {
 			labels: null,
+			loading: true,
 		};
 	}
 
@@ -28,9 +29,53 @@ class ExtensionReport extends Component {
 		// This should be handled for us automagically, but the nonce wasn't working for me
 		apiFetch.use( apiFetch.createNonceMiddleware( wcSettings.nonce ) );
 		apiFetch.use( apiFetch.createRootURLMiddleware( wcSettings.api_root ) );
-		apiFetch( { path: 'wc/v3/reports/labels' } ).then( labels => {
-			this.setState( { labels } );
+		const { afterDate, beforeDate } = this.props;
+		this.fetchLabelData( afterDate, beforeDate );
+	}
+
+	componentDidUpdate( prevProps ) {
+		const prevQuery = prevProps.query;
+		const query = this.props.query;
+
+		// If the dates have changed, fetch new data;
+		if (
+			( prevQuery.before !== query.before ) ||
+			( prevQuery.after !== query.after )
+		) {
+			this.setState( { loading: true } );
+			this.fetchLabelData();
+		}
+	}
+
+	fetchLabelData() {
+		const { beforeDate, afterDate } = this.getDatesFromQuery();
+		const labelsEndpoint = `wc/v3/reports/labels?beforeDate=${ beforeDate }&afterDate=${ afterDate }`;
+
+		apiFetch( { path: labelsEndpoint } ).then( labels => {
+			this.setState( {
+				labels: labels,
+				loading: false,
+			} );
 		} );
+	}
+
+	// TODO: we need to expose the util method that does this from wc-admin
+	getDatesFromQuery() {
+		const { query } = this.props;
+		
+		// the current report defaults to the last 7 days
+		let afterDate = moment().subtract( 7, 'days' ).endOf( 'day' ).valueOf();
+		let beforeDate = moment().startOf( 'day' ).valueOf();
+
+		if ( query.before ) {
+			beforeDate = moment( query.before ).endOf( 'day' ).valueOf();
+		}
+
+		if ( query.after ) {
+			afterDate = moment( query.after ).startOf( 'day' ).valueOf();
+		}
+
+		return { beforeDate, afterDate }
 	}
 
 	getHeadersContent() {
@@ -146,11 +191,12 @@ class ExtensionReport extends Component {
 	}
 
 	render() {
-		const { labels } = this.state;
+		const { loading } = this.state;
+		const { path, query } = this.props;
 		return (
 			<Fragment>
-				<ReportFilters path={ this.props.path } />
-				{ labels ? this.renderTable() : this.renderPlaceholder() }
+				<ReportFilters path={ path } query={ query } />
+				{ ! loading ? this.renderTable() : this.renderPlaceholder() }
 			</Fragment>
 		);
 	}
