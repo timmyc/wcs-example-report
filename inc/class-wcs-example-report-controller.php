@@ -64,10 +64,8 @@ class WCS_Example_Report_Controller extends WC_REST_Reports_V2_Controller {
 			set_transient( self::LABELS_TRANSIENT_KEY, $all_labels, 1800 );
 		}
 
-		// translate timestamps to JS timestapms
-		// hard coding some timestamps for now, will change in the next PR
-		$start_date = isset( $request[ 'start_date' ] ) ? $request[ 'start_date' ] : 1535453404000;
-		$end_date = isset( $request[ 'end_date' ] ) ? $request[ 'end_date' ] : 1535653406000;
+		$start_date = isset( $request[ 'afterDate' ] ) ? (int) $request[ 'afterDate' ] : 1535453404000;
+		$end_date = isset( $request[ 'beforeDate' ] ) ? (int) $request[ 'beforeDate' ] : 1535653406000;
 
 		$results = array();
 		foreach ( (array) $all_labels as $label ) {

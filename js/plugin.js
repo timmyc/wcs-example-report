@@ -188,7 +188,8 @@ var ExtensionReport = function (_Component) {
 		var _this = babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4___default()(this, (ExtensionReport.__proto__ || babel_runtime_core_js_object_get_prototype_of__WEBPACK_IMPORTED_MODULE_1___default()(ExtensionReport)).call(this));
 
 		_this.state = {
-			labels: null
+			labels: null,
+			loading: true
 		};
 		return _this;
 	}
@@ -196,14 +197,67 @@ var ExtensionReport = function (_Component) {
 	babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3___default()(ExtensionReport, [{
 		key: 'componentDidMount',
 		value: function componentDidMount() {
-			var _this2 = this;
-
 			// This should be handled for us automagically, but the nonce wasn't working for me
 			_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"].use(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"].createNonceMiddleware(wcSettings.nonce));
 			_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"].use(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"].createRootURLMiddleware(wcSettings.api_root));
-			Object(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"])({ path: 'wc/v3/reports/labels' }).then(function (labels) {
-				_this2.setState({ labels: labels });
+			var _props = this.props,
+			    afterDate = _props.afterDate,
+			    beforeDate = _props.beforeDate;
+
+			this.fetchLabelData(afterDate, beforeDate);
+		}
+	}, {
+		key: 'componentDidUpdate',
+		value: function componentDidUpdate(prevProps) {
+			var prevQuery = prevProps.query;
+			var query = this.props.query;
+
+			// If the dates have changed, fetch new data;
+			if (prevQuery.before !== query.before || prevQuery.after !== query.after) {
+				this.setState({ loading: true });
+				this.fetchLabelData();
+			}
+		}
+	}, {
+		key: 'fetchLabelData',
+		value: function fetchLabelData() {
+			var _this2 = this;
+
+			var _getDatesFromQuery = this.getDatesFromQuery(),
+			    beforeDate = _getDatesFromQuery.beforeDate,
+			    afterDate = _getDatesFromQuery.afterDate;
+
+			var labelsEndpoint = 'wc/v3/reports/labels?beforeDate=' + beforeDate + '&afterDate=' + afterDate;
+
+			Object(_wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__["default"])({ path: labelsEndpoint }).then(function (labels) {
+				_this2.setState({
+					labels: labels,
+					loading: false
+				});
 			});
+		}
+
+		// TODO: we need to expose the util method that does this from wc-admin
+
+	}, {
+		key: 'getDatesFromQuery',
+		value: function getDatesFromQuery() {
+			var query = this.props.query;
+
+			// the current report defaults to the last 7 days
+
+			var afterDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])().subtract(7, 'days').endOf('day').valueOf();
+			var beforeDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])().startOf('day').valueOf();
+
+			if (query.before) {
+				beforeDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])(query.before).endOf('day').valueOf();
+			}
+
+			if (query.after) {
+				afterDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])(query.after).startOf('day').valueOf();
+			}
+
+			return { beforeDate: beforeDate, afterDate: afterDate };
 		}
 	}, {
 		key: 'getHeadersContent',
@@ -312,13 +366,16 @@ var ExtensionReport = function (_Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var labels = this.state.labels;
+			var loading = this.state.loading;
+			var _props2 = this.props,
+			    path = _props2.path,
+			    query = _props2.query;
 
 			return wp.element.createElement(
 				_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Fragment"],
 				null,
-				wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["ReportFilters"], { path: this.props.path }),
-				labels ? this.renderTable() : this.renderPlaceholder()
+				wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["ReportFilters"], { path: path, query: query }),
+				!loading ? this.renderTable() : this.renderPlaceholder()
 			);
 		}
 	}]);
