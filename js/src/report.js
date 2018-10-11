@@ -196,7 +196,7 @@ class ExtensionReport extends Component {
 		const { path, query } = this.props;
 
 		// if we aren't loading, and there are no labels
-		// show an message
+		// show an EmptyContent message
 		if ( ! loading && ! labels.length ) {
 			return (
 				<Fragment>
