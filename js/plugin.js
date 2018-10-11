@@ -367,10 +367,28 @@ var ExtensionReport = function (_Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var loading = this.state.loading;
+			var _state = this.state,
+			    loading = _state.loading,
+			    labels = _state.labels;
 			var _props2 = this.props,
 			    path = _props2.path,
 			    query = _props2.query;
+
+			// if we aren't loading, and there are no labels
+			// show an message
+
+			if (!loading && !labels.length) {
+				return wp.element.createElement(
+					_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Fragment"],
+					null,
+					wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["ReportFilters"], { query: query, path: path }),
+					wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["EmptyContent"], {
+						title: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__["__"])('No results could be found for this date range.', 'wc-admin'),
+						actionLabel: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__["__"])('View Orders', 'wc-admin'),
+						actionURL: '/wp-admin/edit.php?post_type=shop_order'
+					})
+				);
+			}
 
 			return wp.element.createElement(
 				_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Fragment"],

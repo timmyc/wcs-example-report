@@ -4,7 +4,7 @@
  */
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
-import { Card, ReportFilters, TableCard, TablePlaceholder } from '@woocommerce/components';
+import { Card, EmptyContent, ReportFilters, TableCard, TablePlaceholder } from '@woocommerce/components';
 import { map } from 'lodash';
 import { moment, dateI18n } from '@wordpress/date';
 import { Component } from '@wordpress/element';
@@ -192,8 +192,24 @@ class ExtensionReport extends Component {
 	}
 
 	render() {
-		const { loading } = this.state;
+		const { loading, labels } = this.state;
 		const { path, query } = this.props;
+
+		// if we aren't loading, and there are no labels
+		// show an message
+		if ( ! loading && ! labels.length ) {
+			return (
+				<Fragment>
+					<ReportFilters query={ query } path={ path } />
+					<EmptyContent
+						title={ __( 'No results could be found for this date range.', 'wc-admin' ) }
+						actionLabel={ __( 'View Orders', 'wc-admin' ) }
+						actionURL='/wp-admin/edit.php?post_type=shop_order'
+					/>
+				</Fragment>
+			);
+		}
+
 		return (
 			<Fragment>
 				<ReportFilters path={ path } query={ query } />
