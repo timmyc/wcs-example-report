@@ -91,21 +91,22 @@ class ExtensionReport extends Component {
 				label: __( 'Order', 'wc-admin' ),
 				key: 'orders_count',
 				required: false,
-				isSortable: true,
+				isSortable: false,
+				isNumeric: true,
 			},
 			{
 				label: __( 'Price', 'wc-admin' ),
 				key: 'gross_revenue',
 				required: true,
-				isSortable: true,
+				isSortable: false,
 				isNumeric: true,
 			},
 			{
 				label: __( 'Service', 'wc-admin' ),
 				key: 'refunds',
 				required: false,
-				isSortable: true,
-				isNumeric: true,
+				isSortable: false,
+				isNumeric: false,
 			},
 		];
 	}
