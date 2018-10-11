@@ -272,19 +272,20 @@ var ExtensionReport = function (_Component) {
 				label: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__["__"])('Order', 'wc-admin'),
 				key: 'orders_count',
 				required: false,
-				isSortable: true
+				isSortable: false,
+				isNumeric: true
 			}, {
 				label: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__["__"])('Price', 'wc-admin'),
 				key: 'gross_revenue',
 				required: true,
-				isSortable: true,
+				isSortable: false,
 				isNumeric: true
 			}, {
 				label: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_6__["__"])('Service', 'wc-admin'),
 				key: 'refunds',
 				required: false,
-				isSortable: true,
-				isNumeric: true
+				isSortable: false,
+				isNumeric: false
 			}];
 		}
 	}, {
