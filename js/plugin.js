@@ -290,7 +290,7 @@ var ExtensionReport = function (_Component) {
 
 				var order_date = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_11__["moment"])(created);
 				return [{
-					display: Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_11__["dateI18n"])('Y-n-d H:i', order_date),
+					display: Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_11__["dateI18n"])('Y-m-d H:i', order_date),
 					value: created
 				}, {
 					display: orderLink,

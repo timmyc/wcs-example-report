@@ -115,7 +115,7 @@ class ExtensionReport extends Component {
 			const order_date = moment( created );
 			return [
 				{
-					display: dateI18n( 'Y-n-d H:i', order_date ),
+					display: dateI18n( 'Y-m-d H:i', order_date ),
 					value: created,
 				},
 				{
