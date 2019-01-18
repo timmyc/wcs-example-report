@@ -149,13 +149,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_api_fetch__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @wordpress/api-fetch */ "./node_modules/@wordpress/api-fetch/build-module/index.js");
 /* harmony import */ var _woocommerce_components__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @woocommerce/components */ "@woocommerce/components");
 /* harmony import */ var _woocommerce_components__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var _wordpress_date__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! @wordpress/date */ "./node_modules/@wordpress/date/build-module/index.js");
-/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
-/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_11___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_11__);
-/* harmony import */ var _style_scss__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./style.scss */ "./js/src/style.scss");
-/* harmony import */ var _style_scss__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(_style_scss__WEBPACK_IMPORTED_MODULE_12__);
+/* harmony import */ var _woocommerce_date__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @woocommerce/date */ "@woocommerce/date");
+/* harmony import */ var _woocommerce_date__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(_woocommerce_date__WEBPACK_IMPORTED_MODULE_9__);
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_10___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_10__);
+/* harmony import */ var _wordpress_date__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! @wordpress/date */ "./node_modules/@wordpress/date/build-module/index.js");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_12___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_12__);
+/* harmony import */ var _style_scss__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./style.scss */ "./js/src/style.scss");
+/* harmony import */ var _style_scss__WEBPACK_IMPORTED_MODULE_13___default = /*#__PURE__*/__webpack_require__.n(_style_scss__WEBPACK_IMPORTED_MODULE_13__);
 
 
 
@@ -213,7 +215,7 @@ var ExtensionReport = function (_Component) {
 			var query = this.props.query;
 
 			// If the dates have changed, fetch new data;
-			if (prevQuery.before !== query.before || prevQuery.after !== query.after) {
+			if (prevQuery.period !== query.period || prevQuery.compare !== query.compare || prevQuery.before !== query.before || prevQuery.after !== query.after) {
 				this.setState({ loading: true });
 				this.fetchLabelData();
 			}
@@ -223,9 +225,10 @@ var ExtensionReport = function (_Component) {
 		value: function fetchLabelData() {
 			var _this2 = this;
 
-			var _getDatesFromQuery = this.getDatesFromQuery(),
-			    beforeDate = _getDatesFromQuery.beforeDate,
-			    afterDate = _getDatesFromQuery.afterDate;
+			var _getCurrentDates = Object(_woocommerce_date__WEBPACK_IMPORTED_MODULE_9__["getCurrentDates"])(this.props.query),
+			    _getCurrentDates$prim = _getCurrentDates.primary,
+			    beforeDate = _getCurrentDates$prim.before,
+			    afterDate = _getCurrentDates$prim.after;
 
 			var labelsEndpoint = 'wc/v3/reports/labels?beforeDate=' + beforeDate + '&afterDate=' + afterDate;
 
@@ -235,29 +238,6 @@ var ExtensionReport = function (_Component) {
 					loading: false
 				});
 			});
-		}
-
-		// TODO: we need to expose the util method that does this from wc-admin
-
-	}, {
-		key: 'getDatesFromQuery',
-		value: function getDatesFromQuery() {
-			var query = this.props.query;
-
-			// the current report defaults to the last 7 days
-
-			var afterDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])().subtract(7, 'days').endOf('day').valueOf();
-			var beforeDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])().startOf('day').valueOf();
-
-			if (query.before) {
-				beforeDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])(query.before).endOf('day').valueOf();
-			}
-
-			if (query.after) {
-				afterDate = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])(query.after).startOf('day').valueOf();
-			}
-
-			return { beforeDate: beforeDate, afterDate: afterDate };
 		}
 	}, {
 		key: 'getHeadersContent',
@@ -294,7 +274,7 @@ var ExtensionReport = function (_Component) {
 			var labels = this.state.labels;
 
 
-			return Object(lodash__WEBPACK_IMPORTED_MODULE_9__["map"])(labels, function (row) {
+			return Object(lodash__WEBPACK_IMPORTED_MODULE_10__["map"])(labels, function (row) {
 				var created = row.created,
 				    order_id = row.order_id,
 				    rate = row.rate,
@@ -308,9 +288,9 @@ var ExtensionReport = function (_Component) {
 					order_id
 				);
 
-				var order_date = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["moment"])(created);
+				var order_date = Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_11__["moment"])(created);
 				return [{
-					display: Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_10__["dateI18n"])('Y-n-d H:i', order_date),
+					display: Object(_wordpress_date__WEBPACK_IMPORTED_MODULE_11__["dateI18n"])('Y-n-d H:i', order_date),
 					value: created
 				}, {
 					display: orderLink,
@@ -375,11 +355,11 @@ var ExtensionReport = function (_Component) {
 			    query = _props2.query;
 
 			// if we aren't loading, and there are no labels
-			// show an message
+			// show an EmptyContent message
 
 			if (!loading && !labels.length) {
 				return wp.element.createElement(
-					_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Fragment"],
+					_wordpress_element__WEBPACK_IMPORTED_MODULE_12__["Fragment"],
 					null,
 					wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["ReportFilters"], { query: query, path: path }),
 					wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["EmptyContent"], {
@@ -391,7 +371,7 @@ var ExtensionReport = function (_Component) {
 			}
 
 			return wp.element.createElement(
-				_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Fragment"],
+				_wordpress_element__WEBPACK_IMPORTED_MODULE_12__["Fragment"],
 				null,
 				wp.element.createElement(_woocommerce_components__WEBPACK_IMPORTED_MODULE_8__["ReportFilters"], { path: path, query: query }),
 				!loading ? this.renderTable() : this.renderPlaceholder()
@@ -400,7 +380,7 @@ var ExtensionReport = function (_Component) {
 	}]);
 
 	return ExtensionReport;
-}(_wordpress_element__WEBPACK_IMPORTED_MODULE_11__["Component"]);
+}(_wordpress_element__WEBPACK_IMPORTED_MODULE_12__["Component"]);
 
 ;
 
@@ -22781,6 +22761,17 @@ module.exports = function(module) {
 /***/ (function(module, exports) {
 
 (function() { module.exports = this["wc"]["components"]; }());
+
+/***/ }),
+
+/***/ "@woocommerce/date":
+/*!***************************************!*\
+  !*** external {"this":["wc","date"]} ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+(function() { module.exports = this["wc"]["date"]; }());
 
 /***/ }),
 
