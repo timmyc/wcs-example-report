@@ -6,6 +6,8 @@ var NODE_ENV = process.env.NODE_ENV || 'development';
 const externals = {
 	'@woocommerce/components': { this: [ 'wc', 'components' ] },
 	'@woocommerce/date': { this: [ 'wc', 'date' ] },
+	'@woocommerce/currency': { this: [ 'wc', 'currency' ] },
+	'@woocommerce/navigation': { this: [ 'wc', 'navigation' ] },
 	'@wordpress/components': { this: [ 'wp', 'components' ] },
 	'@wordpress/element': { this: [ 'wp', 'element' ] },
 	'@wordpress/hooks': { this: [ 'wp', 'hooks' ] },
@@ -23,7 +25,7 @@ const webpackConfig = {
 		plugin: './js/src/plugin.js',
 	},
 	output: {
-		path: path.resolve( 'js' ),
+		path: path.resolve( 'js/dist' ),
 		filename: '[name].js',
 		library: [ 'wp', 'wcext' ],
 		libraryTarget: 'this',
