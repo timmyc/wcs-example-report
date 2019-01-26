@@ -12,9 +12,9 @@ function wcs_example_report_register_pages() {
 	}
 
 	wc_admin_register_page( array(
-		'title'  => __( 'Shipping Labels', 'wcs-example-report' ),
-		'parent' => '/analytics',
-		'path'   => '/analytics/wcs-labels',
+		'title'  => __( 'Payments', 'wcs-example-report' ),
+		'parent' => '/analytics/revenue',
+		'path'   => '/analytics/payments',
 	) );
 }
 add_action( 'admin_menu', 'wcs_example_report_register_pages', 12 );
@@ -28,9 +28,9 @@ function wcs_example_report_register_script() {
 	
 	wp_register_script(
 		'wc-admin-extension',
-		plugins_url( 'js/plugin.js', __FILE__ ),
+		plugins_url( 'js/dist/plugin.js', __FILE__ ),
 		[ WC_ADMIN_APP, 'wc-components' ],
-		filemtime( dirname( __FILE__ ) . '/js/plugin.js' ),
+		filemtime( dirname( __FILE__ ) . '/js/dist/plugin.js' ),
 		true
 	);
 

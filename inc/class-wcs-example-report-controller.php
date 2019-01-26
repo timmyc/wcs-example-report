@@ -22,80 +22,38 @@ class WCS_Example_Report_Controller extends WC_REST_Reports_V2_Controller {
 	/**
 	 * WP REST API namespace/version.
 	 */
-	protected $namespace = 'wc/v3';
-	protected $rest_base = 'reports/labels';
+	protected $namespace = 'wc/v4';
+	protected $rest_base = 'reports/payments';
 
+	const TRANSIENT_KEY = 'payments_report';
 
-	const LABELS_TRANSIENT_KEY = 'wcs_label_reports';
-
-	private function compare_label_dates_desc( $label_a, $label_b ) {
-		return $label_b['created'] - $label_a['created'];
-	}
-
-	private function get_all_labels() {
-		global $wpdb;
-		$query = "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'wc_connect_labels'";
-		$db_results = $wpdb->get_results( $query );
-		$results = array();
-
-		foreach ( $db_results as $meta ) {
-			$labels = maybe_unserialize( $meta->meta_value );
-			
-			if ( empty( $labels ) ) {
-				continue;
-			}
-
-			foreach ( (array) $labels as $label ) {
-				$results[] = array_merge( $label, array( 'order_id' => $meta->post_id ) );
-			}
-		}
-
-		usort( $results, array( $this, 'compare_label_dates_desc' ) );
-
-		return $results;
-	}
-
-	private function query_labels( $request ) {
+	private function query_payments( $request ) {
 		$results = [];
-		$all_labels =  get_transient( self::LABELS_TRANSIENT_KEY );
-		if ( false === $all_labels ) {
-			$all_labels = $this->get_all_labels();
+		$all_results = false;//get_transient( self::TRANSIENT_KEY );
+		if ( false === $all_results ) {
+			$json = file_get_contents( __DIR__ . '/../assets/events.json' );
+			$all_results = json_decode( $json, true );
 			//set transient with ttl of 30 minutes
-			set_transient( self::LABELS_TRANSIENT_KEY, $all_labels, 1800 );
+			set_transient( self::TRANSIENT_KEY, $all_results, 1800 );
 		}
 
 		$start_date = isset( $request[ 'afterDate' ] ) ? (int) $request[ 'afterDate' ] : 1535453404000;
 		$end_date = isset( $request[ 'beforeDate' ] ) ? (int) $request[ 'beforeDate' ] : 1535653406000;
 
 		$results = array();
-		foreach ( (array) $all_labels as $label ) {
-			$created = $label['created'];
-			if ( $created > $end_date ) {
-				continue;
-			}
-
-			//labels are sorted in descending order, so if we reached the end, break the loop
+		foreach ( (array) $all_results as $result ) {
+			$created = (int) $result['created'] * 1000;
 			if ( $created < $start_date ) {
-				break;
+				continue;
 			}
-
-			if ( isset( $label['error'] ) || //ignore the error labels
-				! isset( $label['rate'] ) ) { //labels where purchase hasn't completed for any reason
+			if ( $created >= $end_date ) {
 				continue;
 			}
 
-			//ignore labels with complete refunds
-			if ( isset( $label['refund'] ) ) {
-				$refund = ( array ) $label['refund'];
-				if ( isset( $refund['status'] ) && 'completed' === $refund['status'] ) {
-					continue;
-				}
-			}
-
-			$results[] = $label;
+			$results[] = $result;
 		}
 		
-		return $results;
+		return array( 'results' => $results );
 	}
 
 	/**
@@ -106,19 +64,19 @@ class WCS_Example_Report_Controller extends WC_REST_Reports_V2_Controller {
 		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_labels' ),
+				'callback'            => array( $this, 'get_payments' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 			),
 		) );
 	}
 
 	/**
-	 * Return a list of labels matching the query args
+	 * Return a list of payments matching the query args
 	 *
 	 * @return array Of WP_Error or WP_REST_Response.
 	 */
-	public function get_labels( $request ) {
-		$response = $this->query_labels( $request );
+	public function get_payments( $request ) {
+		$response = $this->query_payments( $request );
 
 		return $response;
 	}

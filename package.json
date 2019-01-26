@@ -1,7 +1,7 @@
 {
   "name": "wcs-example-report",
   "version": "0.1.0",
-  "main": "js/plugin.js",
+  "main": "js/dist/plugin.js",
   "author": "Automattic",
   "license": "GPL-2.0-or-later",
   "repository": "",
@@ -14,7 +14,8 @@
     "dev": "webpack",
     "watch": "webpack --watch",
     "lint": "eslint js/src --ext=js,jsx",
-    "i18n": "pot-to-php ./languages/wcs-example-report.pot ./languages/wcs-example-report.php wcs-example-report && grunt i18n"
+    "i18n": "pot-to-php ./languages/wcs-example-report.pot ./languages/wcs-example-report.php wcs-example-report && grunt i18n",
+    "generate-events": "mkdir -p assets && node generate-events.js"
   },
   "devDependencies": {
     "@wordpress/babel-plugin-makepot": "^1.0.0",
@@ -44,6 +45,9 @@
     "@wordpress/api-fetch": "^2.0.0",
     "@wordpress/date": "^2.0.1",
     "@wordpress/element": "^2.0.0",
+    "d3-random": "^1.1.2",
+    "d3-scale": "^2.1.2",
+    "d3-time": "^1.0.10",
     "lodash": "^4.17.5"
   },
   "files": [

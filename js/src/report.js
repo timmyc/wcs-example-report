@@ -4,11 +4,27 @@
  */
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
-import { Card, EmptyContent, ReportFilters, TableCard, TablePlaceholder } from '@woocommerce/components';
-import { map } from 'lodash';
+import {
+	EmptyContent,
+	ReportFilters,
+	TableCard,
+	Chart,
+	SummaryList,
+	SummaryListPlaceholder,
+	SummaryNumber,
+} from '@woocommerce/components';
+import {
+	getAllowedIntervalsForQuery,
+	getCurrentDates,
+	getIntervalForQuery,
+	getChartTypeForQuery,
+} from '@woocommerce/date';
+import { formatCurrency } from '@woocommerce/currency';
+import { getNewPath } from '@woocommerce/navigation';
+import { map, groupBy } from 'lodash';
 import { moment, dateI18n } from '@wordpress/date';
-import { Component } from '@wordpress/element';
-import { Fragment } from '@wordpress/element';
+import { Component, Fragment } from '@wordpress/element';
+import { timeDay, timeWeek, timeMonth, timeYear } from 'd3-time';
 
 /**
  * Internal dependencies
@@ -20,7 +36,8 @@ class ExtensionReport extends Component {
 	constructor() {
 		super();
 		this.state = {
-			labels: null,
+			results: null,
+			secondaryResults: null,
 			loading: true,
 		};
 	}
@@ -29,8 +46,7 @@ class ExtensionReport extends Component {
 		// This should be handled for us automagically, but the nonce wasn't working for me
 		apiFetch.use( apiFetch.createNonceMiddleware( wcSettings.nonce ) );
 		apiFetch.use( apiFetch.createRootURLMiddleware( wcSettings.api_root ) );
-		const { afterDate, beforeDate } = this.props;
-		this.fetchLabelData( afterDate, beforeDate );
+		this.fetchData();
 	}
 
 	componentDidUpdate( prevProps ) {
@@ -39,133 +55,102 @@ class ExtensionReport extends Component {
 
 		// If the dates have changed, fetch new data;
 		if (
+			( prevQuery.period !== query.period ) ||
+			( prevQuery.compare !== query.compare ) ||
 			( prevQuery.before !== query.before ) ||
 			( prevQuery.after !== query.after )
 		) {
 			this.setState( { loading: true } );
-			this.fetchLabelData();
+			this.fetchData();
 		}
 	}
 
-	fetchLabelData() {
-		const { beforeDate, afterDate } = this.getDatesFromQuery();
-		const labelsEndpoint = `wc/v3/reports/labels?beforeDate=${ beforeDate }&afterDate=${ afterDate }`;
+	fetchData() {
+		const { primary, secondary } = getCurrentDates( this.props.query );
+		// const endpoint = 'wc/v1/connect/stripe/transactions';
+		const endpoint = 'wc/v4/reports/payments';
+		const primaryPath = `${ endpoint }?beforeDate=${ +primary.before }&afterDate=${ +primary.after }`;
+		const secondaryPath = `${ endpoint }?beforeDate=${ +secondary.before }&afterDate=${ +secondary.after }`;
 
-		apiFetch( { path: labelsEndpoint } ).then( labels => {
+		Promise.all( [
+			apiFetch( { path: primaryPath } ),
+			apiFetch( { path: secondaryPath } ),
+		] ).then( ( [ { results }, { results: secondaryResults } ] ) => {
 			this.setState( {
-				labels: labels,
+				results,
+				secondaryResults,
 				loading: false,
 			} );
 		} );
 	}
 
-	// TODO: we need to expose the util method that does this from wc-admin
-	getDatesFromQuery() {
-		const { query } = this.props;
-		
-		// the current report defaults to the last 7 days
-		let afterDate = moment().subtract( 7, 'days' ).endOf( 'day' ).valueOf();
-		let beforeDate = moment().startOf( 'day' ).valueOf();
-
-		if ( query.before ) {
-			beforeDate = moment( query.before ).endOf( 'day' ).valueOf();
-		}
-
-		if ( query.after ) {
-			afterDate = moment( query.after ).startOf( 'day' ).valueOf();
-		}
-
-		return { beforeDate, afterDate }
-	}
-
 	getHeadersContent() {
 		return [
 			{
-				label: __( 'Date', 'wc-admin' ),
-				key: 'date_start',
-				required: true,
-				defaultSort: true,
-				isSortable: true,
-			},
-			{
-				label: __( 'Order', 'wc-admin' ),
-				key: 'orders_count',
-				required: false,
-				isSortable: false,
-				isNumeric: true,
-			},
-			{
-				label: __( 'Price', 'wc-admin' ),
-				key: 'gross_revenue',
+				label: __( 'Amount', 'wc-admin' ),
+				key: 'amount',
 				required: true,
 				isSortable: false,
 				isNumeric: true,
 			},
 			{
-				label: __( 'Service', 'wc-admin' ),
-				key: 'refunds',
+				label: __( 'Type', 'wc-admin' ),
+				key: 'type',
 				required: false,
 				isSortable: false,
 				isNumeric: false,
+			},
+			{
+				label: __( 'Description', 'wc-admin' ),
+				key: 'description',
+				required: false,
+				isSortable: false,
+				isNumeric: false,
+			},
+			{
+				label: __( 'Date', 'wc-admin' ),
+				key: 'created',
+				required: true,
+				defaultSort: true,
+				isSortable: true,
 			},
 		];
 	}
 
 	getRowsContent() {
-		const { labels } = this.state;
+		const { results } = this.state;
 
-		return map( labels, row => {
+		return map( results, row => {
 			const {
+				amount,
+				type,
+				description,
 				created,
-				order_id,
-				rate,
-				service_name,
 			} = row;
 
-			// wc-admin has a util for `getAdminLink` might be nice to get a similar util into core
-			const orderLink = (
-				<a href={ '/wp-admin/post.php?action=edit&post=' + order_id }>
-					{ order_id }
-				</a>
-			);
-
-			const order_date = moment( created );
 			return [
 				{
-					display: dateI18n( 'Y-n-d H:i', order_date ),
-					value: created,
+					display: formatCurrency( amount / 100 ),
+					value: amount / 100,
 				},
 				{
-					display: orderLink,
-					value: order_id,
+					display: type[ 0 ].toUpperCase() + type.slice( 1 ),
+					value: type,
 				},
 				{
-					// wc-admin has some currency helpers
-					// TODO: make these available to extension developers
-					display: rate,
-					value: rate,
+					display: description,
+					value: description,
 				},
 				{
-					display: service_name,
-					value: service_name,
+					display: dateI18n( 'Y-m-d H:i', moment( created * 1000 ) ),
+					value: created * 1000,
 				},
 			];
 		} );
 	}
 
-	renderPlaceholder() {
-		const headers = this.getHeadersContent();
-		return ( 
-			<Card
-				title={ __( 'Shipping Labels', 'wc-admin' ) }
-				className="wcs-example-report-placeholder"
-			>
-				<TablePlaceholder caption={ __( 'Shipping Labels', 'wc-admin' ) } headers={ headers } />
-			</Card>
-		);
-	}
-
 	renderTable() {
+		const { loading } = this.state;
 		const { query } = this.props;
 
 		const rows = this.getRowsContent() || [];
@@ -177,9 +162,10 @@ class ExtensionReport extends Component {
 			orderby: query.orderby || 'date_start',
 			order: query.order || 'asc',
 		};
+		console.log('query',query)
 		return (
 			<TableCard
-				title={ __( 'Shipping Labels', 'wc-admin' ) }
+				title={ __( 'Payments', 'wc-admin' ) }
 				rows={ rows }
 				totalRows={ rows.length }
 				rowsPerPage={ 100 }
@@ -187,17 +173,154 @@ class ExtensionReport extends Component {
 				onQueryChange={ () => {} }
 				query={ tableQuery }
 				summary={ null }
+				isLoading={ loading }
+				downloadable
 			/>
 		);
 	}
 
+	renderChart() {
+		const { path, query } = this.props;
+		const { results, secondaryResults } = this.state;
+
+		const transactions = results.filter( d => d.type === 'charge' || ( query.chart === 'net-volume' && d.type === 'refund' ) );
+		const secondaryTransactions = secondaryResults.filter( d => d.type === 'charge' || ( query.chart === 'net-volume' && d.type === 'refund' ) );
+
+		const currentInterval = getIntervalForQuery( query );
+		const allowedIntervals = getAllowedIntervalsForQuery( query );
+		const { primary, secondary } = getCurrentDates( query );
+		const primaryKey = `${ primary.label } (${ primary.range })`;
+		const secondaryKey = `${ secondary.label } (${ secondary.range })`;
+
+		const bin =
+			currentInterval === 'hour'    ? timeHour :
+			currentInterval === 'day'     ? timeDay :
+			currentInterval === 'week'    ? timeWeek :
+			currentInterval === 'month'   ? timeMonth :
+			currentInterval === 'quarter' ? timeMonth.every( 3 ) :
+			currentInterval === 'year'    ? timeYear : null;
+
+		const resultsByBin = groupBy( transactions, d => bin( d.created * 1000 ) );
+		const secondaryResultsByBin = groupBy( secondaryTransactions, d => bin( d.created * 1000 ) );
+
+		const secondaryRange = bin.range( secondary.after, secondary.before );
+		const chartData = bin.range( primary.after, primary.before ).map( ( date, index ) => {
+			const values = resultsByBin[ date ] || [];
+
+			const secondaryDate = secondaryRange[ index ];
+			const secondaryValues = secondaryResultsByBin[ secondaryDate ] || [];
+
+			return {
+				date,
+				[ primaryKey ]: {
+					labelDate: date,
+					value: values.reduce( ( p, c ) => p + c.amount / 100, 0 ),
+				},
+				[ secondaryKey ]: {
+					labelDate: secondaryDate,
+					value: secondaryValues.reduce( ( p, c ) => p + c.amount / 100, 0 ),
+				}
+			};
+		} );
+
+		
+
+		const selectedChart = query.chart === 'net-volume' ? {
+			key: 'net_volume',
+			label: 'Net Volume',
+			type: 'currency',
+		} : {
+			key: 'gross_volume',
+			label: 'Gross Volume',
+			type: 'currency',
+		};
+
+		return (
+			<Chart
+				allowedIntervals={ allowedIntervals }
+				data={ chartData }
+				dateParser={ '%Y-%m-%dT%H:%M:%S' }
+				interactiveLegend={ true }
+				interval={ currentInterval }
+				// isRequesting={ primaryData.isRequesting || secondaryData.isRequesting }
+				// itemsLabel={ itemsLabel }
+				// legendPosition={ legendPosition }
+				mode={ /* mode || this.getChartMode() */ 'time-comparison' }
+				path={ path }
+				query={ query }
+				showHeaderControls={ true }
+				title={ selectedChart.label }
+				// tooltipLabelFormat={ formats.tooltipLabelFormat }
+				tooltipTitle={ selectedChart.label }
+				tooltipValueFormat={ formatCurrency }
+				type={ getChartTypeForQuery( query ) }
+				valueType={ selectedChart.type }
+				// xFormat={ formats.xFormat }
+				// x2Format={ formats.x2Format }
+				// yFormat={ }
+			/>
+		);
+	}
+
+	renderSummary() {
+		const { loading, results, secondaryResults } = this.state;
+		const { query, path } = this.props;
+
+		if ( loading ) {
+			return <SummaryListPlaceholder numberOfItems={ 2 } />;
+		}
+
+		const charges = results.filter( d => d.type === 'charge' );
+		const secondaryCharges = secondaryResults.filter( d => d.type === 'charge' );
+		const primaryGrossTotal = charges.reduce( ( p, c ) => p + c.amount / 100, 0 );
+		const secondaryGrossTotal = secondaryCharges.reduce( ( p, c ) => p + c.amount / 100, 0 );
+
+		const transactions = results.filter( d => d.type === 'charge' || d.type === 'refund' );
+		const secondaryTransactions = secondaryResults.filter( d => d.type === 'charge' || d.type === 'refund' );
+		const primaryNetTotal = transactions.reduce( ( p, c ) => p + c.amount / 100, 0 );
+		const secondaryNetTotal = secondaryTransactions.reduce( ( p, c ) => p + c.amount / 100, 0 );
+
+		const summaryNumbers = () => [
+			<SummaryNumber
+				key={ 'gross-volume' }
+				delta={ secondaryGrossTotal && Math.round( ( primaryGrossTotal - secondaryGrossTotal ) / secondaryGrossTotal * 100 ) }
+				href={ getNewPath( { chart: 'gross-volume' } ) }
+				label={ 'Gross Volume' }
+				prevLabel={
+					'previous_period' === query.compare
+						? __( 'Previous Period:', 'wc-admin' )
+						: __( 'Previous Year:', 'wc-admin' )
+				}
+				prevValue={ formatCurrency( secondaryGrossTotal ) }
+				selected={ ! query.chart || query.chart === 'gross-volume' }
+				value={ formatCurrency( primaryGrossTotal ) }
+			/>,
+			<SummaryNumber
+				key={ 'net-volume' }
+				delta={ secondaryNetTotal && Math.round( ( primaryNetTotal - secondaryNetTotal ) / secondaryNetTotal * 100 ) }
+				href={ getNewPath( { chart: 'net-volume' } ) }
+				label={ 'Net Volume' }
+				prevLabel={
+					'previous_period' === query.compare
+						? __( 'Previous Period:', 'wc-admin' )
+						: __( 'Previous Year:', 'wc-admin' )
+				}
+				prevValue={ formatCurrency( secondaryNetTotal ) }
+				selected={ query.chart === 'net-volume' }
+				value={ formatCurrency( primaryNetTotal ) }
+			/>,
+		];
+
+		return <SummaryList>{ summaryNumbers }</SummaryList>;
+	}
+
 	render() {
-		const { loading, labels } = this.state;
+		const { loading, results } = this.state;
 		const { path, query } = this.props;
 
-		// if we aren't loading, and there are no labels
+		// if we aren't loading, and there are no results
 		// show an EmptyContent message
-		if ( ! loading && ! labels.length ) {
+		if ( ! loading && ! results.length ) {
 			return (
 				<Fragment>
 					<ReportFilters query={ query } path={ path } />
@@ -213,7 +336,9 @@ class ExtensionReport extends Component {
 		return (
 			<Fragment>
 				<ReportFilters path={ path } query={ query } />
-				{ ! loading ? this.renderTable() : this.renderPlaceholder() }
+				{ this.renderSummary() }
+				{ ! loading ? this.renderChart() : null }
+				{ this.renderTable() }
 			</Fragment>
 		);
 	}

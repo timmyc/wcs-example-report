@@ -9,12 +9,12 @@ import { addFilter } from '@wordpress/hooks';
  */
 import Report from './report';
 
-addFilter( 'woocommerce-reports-list', 'wcs-labels/labels', pages => {
+addFilter( 'woocommerce-reports-list', 'payments', pages => {
 	return [
 		...pages,
 		{
-			report: 'wcs-labels',
-			title: 'Labels',
+			report: 'payments',
+			title: 'Payments',
 			component: Report,
 		},
 	];
