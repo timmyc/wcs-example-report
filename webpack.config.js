@@ -5,6 +5,7 @@ var NODE_ENV = process.env.NODE_ENV || 'development';
 
 const externals = {
 	'@woocommerce/components': { this: [ 'wc', 'components' ] },
+	'@woocommerce/date': { this: [ 'wc', 'date' ] },
 	'@wordpress/components': { this: [ 'wp', 'components' ] },
 	'@wordpress/element': { this: [ 'wp', 'element' ] },
 	'@wordpress/hooks': { this: [ 'wp', 'hooks' ] },

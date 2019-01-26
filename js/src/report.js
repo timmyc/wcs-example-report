@@ -5,10 +5,10 @@
 import { __ } from '@wordpress/i18n';
 import apiFetch from '@wordpress/api-fetch';
 import { Card, EmptyContent, ReportFilters, TableCard, TablePlaceholder } from '@woocommerce/components';
+import { getCurrentDates } from '@woocommerce/date';
 import { map } from 'lodash';
 import { moment, dateI18n } from '@wordpress/date';
-import { Component } from '@wordpress/element';
-import { Fragment } from '@wordpress/element';
+import { Component, Fragment } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -39,6 +39,8 @@ class ExtensionReport extends Component {
 
 		// If the dates have changed, fetch new data;
 		if (
+			( prevQuery.period !== query.period ) ||
+			( prevQuery.compare !== query.compare ) ||
 			( prevQuery.before !== query.before ) ||
 			( prevQuery.after !== query.after )
 		) {
@@ -48,7 +50,7 @@ class ExtensionReport extends Component {
 	}
 
 	fetchLabelData() {
-		const { beforeDate, afterDate } = this.getDatesFromQuery();
+		const { primary: { before: beforeDate, after: afterDate } } = getCurrentDates( this.props.query );
 		const labelsEndpoint = `wc/v3/reports/labels?beforeDate=${ beforeDate }&afterDate=${ afterDate }`;
 
 		apiFetch( { path: labelsEndpoint } ).then( labels => {
@@ -57,25 +59,6 @@ class ExtensionReport extends Component {
 				loading: false,
 			} );
 		} );
-	}
-
-	// TODO: we need to expose the util method that does this from wc-admin
-	getDatesFromQuery() {
-		const { query } = this.props;
-		
-		// the current report defaults to the last 7 days
-		let afterDate = moment().subtract( 7, 'days' ).endOf( 'day' ).valueOf();
-		let beforeDate = moment().startOf( 'day' ).valueOf();
-
-		if ( query.before ) {
-			beforeDate = moment( query.before ).endOf( 'day' ).valueOf();
-		}
-
-		if ( query.after ) {
-			afterDate = moment( query.after ).startOf( 'day' ).valueOf();
-		}
-
-		return { beforeDate, afterDate }
 	}
 
 	getHeadersContent() {
@@ -132,7 +115,7 @@ class ExtensionReport extends Component {
 			const order_date = moment( created );
 			return [
 				{
-					display: dateI18n( 'Y-n-d H:i', order_date ),
+					display: dateI18n( 'Y-m-d H:i', order_date ),
 					value: created,
 				},
 				{

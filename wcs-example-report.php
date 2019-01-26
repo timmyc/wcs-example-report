@@ -13,7 +13,7 @@ function wcs_example_report_register_pages() {
 
 	wc_admin_register_page( array(
 		'title'  => __( 'Shipping Labels', 'wcs-example-report' ),
-		'parent' => '/analytics',
+		'parent' => '/analytics/revenue',
 		'path'   => '/analytics/wcs-labels',
 	) );
 }
